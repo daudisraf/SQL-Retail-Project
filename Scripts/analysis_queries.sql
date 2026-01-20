@@ -2,84 +2,89 @@ USE retail_db;
 
 -- 1. Total Sales Revenue by Customer
 SELECT 
-    c.name AS customer_name,
-    SUM(s.quantity * p.unit_price_usd) AS total_revenue
+    c.Name AS Customer_Name,
+    ROUND(SUM(s.Quantity * CAST(REPLACE(REPLACE(p.`Unit Price USD`, '$', ''), ' ', '') AS DECIMAL(10,2))), 2) AS Total_Revenue
 FROM sales s
-JOIN customers c ON s.customer_key = c.customer_key
-JOIN products p ON s.product_key = p.product_key
-GROUP BY c.customer_key, c.name
-ORDER BY total_revenue DESC;
+JOIN customers c ON s.CustomerKey = c.CustomerKey
+JOIN products p ON s.ProductKey = p.ProductKey
+GROUP BY c.CustomerKey, c.Name
+ORDER BY Total_Revenue DESC;
 
 -- 2. Sales Performance by Store
 SELECT 
-    st.store_key,
-    st.country,
-    st.state,
-    SUM(s.quantity * p.unit_price_usd) AS total_sales
+    st.StoreKey,
+    st.Country,
+    st.State,
+    ROUND(SUM(s.Quantity * CAST(REPLACE(REPLACE(p.`Unit Price USD`, '$', ''), ' ', '') AS DECIMAL(10,2))), 2) AS Total_Sales
 FROM sales s
-JOIN stores st ON s.store_key = st.store_key
-JOIN products p ON s.product_key = p.product_key
-GROUP BY st.store_key, st.country, st.state
-ORDER BY total_sales DESC;
+JOIN stores st ON s.StoreKey = st.StoreKey
+JOIN products p ON s.ProductKey = p.ProductKey
+GROUP BY st.StoreKey, st.Country, st.State
+ORDER BY Total_Sales DESC;
 
 -- 3. Top Selling Products
 SELECT 
-    p.product_name,
-    p.category,
-    SUM(s.quantity) AS total_quantity_sold
+    p.`Product Name`,
+    p.Category,
+    SUM(s.Quantity) AS Units_Sold
 FROM sales s
-JOIN products p ON s.product_key = p.product_key
-GROUP BY p.product_key, p.product_name, p.category
-ORDER BY total_quantity_sold DESC
+JOIN products p ON s.ProductKey = p.ProductKey
+GROUP BY p.ProductKey, p.`Product Name`, p.Category
+ORDER BY Units_Sold DESC
 LIMIT 10;
 
 -- 4. Customer Demographics Breakdown
 SELECT 
-    gender,
-    continent,
-    COUNT(customer_key) AS total_customers
+    Gender,
+    Continent,
+    COUNT(CustomerKey) AS Total_Customers
 FROM customers
-GROUP BY gender, continent;
+GROUP BY Gender, Continent;
 
 -- 5. Sales Trends Over Time (Monthly)
 SELECT 
-    DATE_FORMAT(order_date, '%Y-%m') AS month,
-    SUM(s.quantity * p.unit_price_usd) AS monthly_revenue
+    DATE_FORMAT(STR_TO_DATE(s.`Order Date`, '%m/%d/%Y'), '%Y-%m') AS Month,
+    ROUND(SUM(s.Quantity * CAST(REPLACE(REPLACE(p.`Unit Price USD`, '$', ''), ' ', '') AS DECIMAL(10,2))), 2) AS Monthly_Revenue
 FROM sales s
-JOIN products p ON s.product_key = p.product_key
-GROUP BY month
-ORDER BY month;
+JOIN products p ON s.ProductKey = p.ProductKey
+GROUP BY Month
+ORDER BY Month;
 
 -- 6. Average Order Value (AOV) by Store
 SELECT 
-    st.store_key,
-    SUM(s.quantity * p.unit_price_usd) / COUNT(DISTINCT s.order_number) AS avg_order_value
+    st.StoreKey,
+    st.Country,
+    ROUND(
+        SUM(s.Quantity * CAST(REPLACE(REPLACE(p.`Unit Price USD`, '$', ''), ' ', '') AS DECIMAL(10,2))) 
+        / COUNT(DISTINCT s.`Order Number`), 2
+    ) AS Avg_Order_Value
 FROM sales s
-JOIN stores st ON s.store_key = st.store_key
-JOIN products p ON s.product_key = p.product_key
-GROUP BY st.store_key;
+JOIN stores st ON s.StoreKey = st.StoreKey
+JOIN products p ON s.ProductKey = p.ProductKey
+GROUP BY st.StoreKey, st.Country
+ORDER BY Avg_Order_Value DESC;
 
 -- 7. Customer Purchase Frequency
 SELECT 
-    c.name,
-    COUNT(DISTINCT s.order_number) AS total_orders
+    c.Name,
+    COUNT(DISTINCT s.`Order Number`) AS Total_Orders
 FROM sales s
-JOIN customers c ON s.customer_key = c.customer_key
-GROUP BY c.customer_key, c.name
-ORDER BY total_orders DESC;
+JOIN customers c ON s.CustomerKey = c.CustomerKey
+GROUP BY c.CustomerKey, c.Name
+ORDER BY Total_Orders DESC;
 
 -- 8. Yearly Sales Growth Rate
-WITH yearly_sales AS (
+WITH Yearly_Sales AS (
     SELECT 
-        YEAR(order_date) AS year,
-        SUM(s.quantity * p.unit_price_usd) AS revenue
+        YEAR(STR_TO_DATE(s.`Order Date`, '%m/%d/%Y')) AS Year,
+        SUM(s.Quantity * CAST(REPLACE(REPLACE(p.`Unit Price USD`, '$', ''), ' ', '') AS DECIMAL(10,2))) AS Revenue
     FROM sales s
-    JOIN products p ON s.product_key = p.product_key
-    GROUP BY year
+    JOIN products p ON s.ProductKey = p.ProductKey
+    GROUP BY Year
 )
 SELECT 
-    year,
-    revenue,
-    LAG(revenue) OVER (ORDER BY year) AS prev_year_revenue,
-    (revenue - LAG(revenue) OVER (ORDER BY year)) / LAG(revenue) OVER (ORDER BY year) * 100 AS growth_rate
-FROM yearly_sales;
+    Year,
+    ROUND(Revenue, 2) AS Revenue,
+    ROUND(LAG(Revenue) OVER (ORDER BY Year), 2) AS Prev_Year_Revenue,
+    ROUND(((Revenue - LAG(Revenue) OVER (ORDER BY Year)) / LAG(Revenue) OVER (ORDER BY Year)) * 100, 2) AS Growth_Percentage
+FROM Yearly_Sales;
