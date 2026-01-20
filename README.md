@@ -46,3 +46,12 @@ Data Source: https://mavenanalytics.io/data-playground/global-electronics-retail
 | Exchange Rates | Date           | Date                                                         |
 | Exchange Rates | Currency       | Currency code                                                |
 | Exchange Rates | Exchange       | Exchange rate compared to USD                                |
+
+
+## Business Analysis
+The following business questions were addressed using SQL:
+* **Revenue Tracking**: Identified top customers and stores by total revenue.
+* **Product Performance**: Ranked the top 10 selling products by volume.
+* **Demographics**: Analyzed customer distribution across genders and continents.
+* **Growth Metrics**: Calculated monthly sales trends and yearly revenue growth rates.
+* **Store Efficiency**: Measured Average Order Value (AOV) per store location.
